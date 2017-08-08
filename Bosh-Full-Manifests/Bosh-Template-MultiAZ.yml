@@ -381,6 +381,17 @@ jobs:
         uris:
         - "loggregator.system.((domain_name))"
 
+- name: splunk-nozzle
+  instances: 3
+  azs: [az1,az2,az3]
+  vm_type: small_general
+  stemcell: default
+  templates:
+  - {name: splunk-forwarder, release: cf-splunk}
+  - {name: splunk-nozzle, release: cf-splunk}
+  networks:
+  - name: cf_private
+
 - name: uaa
   instances: 3
   azs: [az1,az2,az3]
@@ -543,7 +554,6 @@ properties:
     default_to_diego_backend: true
     default_app_memory: 64
     default_app_disk_in_mb: 128
-    internal_api_user: internal_user
     external_port: 9022
     buildpacks:
       blobstore_type: fog
@@ -581,6 +591,7 @@ properties:
     - {name: php_buildpack, package: php-buildpack}
     - {name: binary_buildpack, package: binary-buildpack}
     - {name: dotnet_core_buildpack, package: dotnet-core-buildpack}
+    internal_api_user: internal_user
     internal_api_password: ((internal_api_password))
     quota_definitions:
       default:
@@ -637,6 +648,27 @@ properties:
     - {name: ccdb, tag: cc}
     roles:
     - {name: ccadmin, password: ((cc_db_password)), tag: admin}
+  cf_splunk:
+    skip_ssl_validation: true
+
+    add_app_info: true
+    api_endoint: https://api.system.((domain_name))
+    api_user: internal_user
+    api_password: ((internal_api_password))
+
+    events: ['ValueMetric', 'CounterEvent', 'Error', 'ContainerMetric']
+    firehose_subscription_id: splunk-firehose-subscription
+
+    splunk_server: ((splunk_server_port))
+    splunk_index: ((splunk_index))
+    splunk_token: ((splunk_token))
+
+    #splunk_ssl: false
+    #splunk_ssl_cert:
+    #splunk_ssl_password: password
+    #splunk_ssl_root_ca:
+    #splunk_ssl_common_name:
+    #splunk_ssl_alt_name:
   consul:
     agent:
       log_level: null
